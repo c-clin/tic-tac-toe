@@ -32,7 +32,10 @@ $(document).ready(function() {
         if (typeof origBoard[e.target.id] == 'number') {
             turn(e.target.id, huPlayer);
             if (!checkWin(origBoard, huPlayer)) {
-                if (!checkTie()) turn(bestSpot(), aiPlayer);
+                setTimeout(() => {
+                    if (!checkTie()) turn(bestSpot(), aiPlayer);
+                }, 500);
+                
             }
             
         }
@@ -83,7 +86,7 @@ $(document).ready(function() {
     }
 
     function bestSpot() {
-        return emptySquares()[0];
+        return minmax(origBoard, aiPlayer).index;
     }
 
     function checkTie() {
@@ -98,6 +101,56 @@ $(document).ready(function() {
         return false;
     }
     
+    function minmax(newBoard, player) {
+        var availSpots = emptySquares(newBoard);
+        if (checkWin(newBoard, player)) {
+            return {score: -10};
+        } else if (checkWin(newBoard, aiPlayer)) {
+            return {score: 10};
+        } else if (availSpots.length === 0) {
+            return {score: 0};
+        }
+
+        var moves = [];
+        for (let i = 0; i < availSpots.length; i++) {
+            var move = {};
+            move.index = newBoard[availSpots[i]];
+            newBoard[availSpots[i]] = player;
+
+            if (player == aiPlayer) {
+                var result = minmax(newBoard, huPlayer);
+                move.score = result.score;
+            } else {
+                var result = minmax(newBoard, aiPlayer);
+                move.score = result.score;
+            }
+
+            newBoard[availSpots[i]] = move.index;
+
+            moves.push(move);
+        }
+
+        var bestMove;
+        if (player === aiPlayer) {
+            var bestScore = -10000;
+            for (let i = 0; i < moves.length; i++) {
+                if (moves[i].score > bestScore) {
+                    bestScore = moves[i].score;
+                    bestMove = i;
+                } 
+            }
+        } else {
+            var bestScore = 10000;
+            for (let i = 0; i < moves.length; i++) {
+                if (moves[i].score < bestScore) {
+                    bestScore = moves[i].score;
+                    bestMove = i;
+                }
+            }      
+        }
+        return moves[bestMove];
+    }
+
     // restart the game
     $(".replay-btn").click(startGame);
 
